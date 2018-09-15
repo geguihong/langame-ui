@@ -1,5 +1,6 @@
 import React, { PureComponent, Fragment } from 'react';
 import { connect } from 'dva';
+import router from 'umi/router';
 import moment from 'moment';
 import {
     Row,
@@ -26,7 +27,7 @@ import {
 import StandardTable from '@/components/StandardTable';
 import PageHeaderWrapper from '@/components/PageHeaderWrapper';
 
-import styles from './MainWorkplace.less';
+import styles from './NodeManager.less';
 
 const FormItem = Form.Item;
 const { Step } = Steps;
@@ -156,11 +157,11 @@ class UpdateForm extends PureComponent {
 }
 
 /* eslint react/no-multi-comp:0 */
-@connect(({ pathnode }) => ({
-    pathnode
+@connect(({ node_manager }) => ({
+    node_manager
 }))
 @Form.create()
-class MainWorkplace extends PureComponent {
+class NodeManager extends PureComponent {
     state = {
         modalVisible: false,
         updateModalVisible: false,
@@ -192,11 +193,11 @@ class MainWorkplace extends PureComponent {
         },
         {
             title: '操作',
-            render: (text, record) => (
+            render: (text, node) => (
                 <Fragment>
-                    <a onClick={() => this.handleUpdateModalVisible(true, record)}>修改</a>
+                    <a onClick={() => this.handleUpdateModalVisible(true, node)}>修改</a>
                     <Divider type="vertical" />
-                    <a href="">编辑文案</a>
+                    <a onClick={() => this.goEdit(node)}>编辑文案</a>
                 </Fragment>
             ),
         },
@@ -210,8 +211,19 @@ class MainWorkplace extends PureComponent {
         const { formValues } = this.state;
         const { dispatch } = this.props;
         dispatch({
-            type: 'pathnode/fetch',
+            type: 'node_manager/fetch',
             payload: { node, condition: formValues }
+        });
+    }
+
+    goEdit = (node) => {
+        router.push({
+            pathname: '/workplace/edit',
+            query: {
+                type: node.type,
+                node: node.id,
+                recursion: true
+            },
         });
     }
 
@@ -236,7 +248,7 @@ class MainWorkplace extends PureComponent {
         }
 
         dispatch({
-            type: 'pathnode/fetch',
+            type: 'node_manager/fetch',
             payload: params,
         });
     };
@@ -268,15 +280,12 @@ class MainWorkplace extends PureComponent {
         switch (e.key) {
             case 'remove':
                 dispatch({
-                    type: 'rule/remove',
-                    payload: {
-                        key: selectedRows.map(row => row.key),
-                    },
-                    callback: () => {
-                        this.setState({
-                            selectedRows: [],
-                        });
-                    },
+                    type: 'node_manager/delete',
+                    payload: selectedRows.map(row => row.id)
+                }).then(() => {
+                    this.setState({
+                        selectedRows: [],
+                    });
                 });
                 break;
             default:
@@ -310,7 +319,7 @@ class MainWorkplace extends PureComponent {
             });
 
             // dispatch({
-            //     type: 'pathnode/fetch',
+            //     type: 'node_manager/fetch',
             //     payload: { condition: values },
             // });
         });
@@ -332,7 +341,7 @@ class MainWorkplace extends PureComponent {
     handleAdd = fields => {
         const { dispatch } = this.props;
         dispatch({
-            type: 'pathnode/create',
+            type: 'node_manager/create',
             payload: fields,
         });
 
@@ -343,8 +352,8 @@ class MainWorkplace extends PureComponent {
     handleUpdate = fields => {
         const { dispatch } = this.props;
         dispatch({
-            type: 'pathnode/update',
-            payload: fields,
+            type: 'node_manager/update',
+            payload: fields
         }).then(({ success, error }) => {
             if (success) {
                 message.success('修改成功');
@@ -484,7 +493,7 @@ class MainWorkplace extends PureComponent {
 
     renderNodePath() {
         const {
-            pathnode: { pathStack },
+            node_manager: { pathStack },
         } = this.props;
         return (
             <Alert message={
@@ -509,7 +518,7 @@ class MainWorkplace extends PureComponent {
 
     render() {
         const {
-            pathnode: { currentNode, nodes, loading }
+            node_manager: { currentNode, nodes, loading }
         } = this.props;
 
         const { selectedRows, modalVisible, updateModalVisible, stepFormValues } = this.state;
@@ -541,7 +550,7 @@ class MainWorkplace extends PureComponent {
                             </Button>
                             {selectedRows.length > 0 && (
                                 <span>
-                                    <Button>批量操作</Button>
+                                    <Button onClick={this.goEdit}>编辑文案</Button>
                                     <Dropdown overlay={menu}>
                                         <Button>
                                             更多操作 <Icon type="down" />
@@ -575,4 +584,4 @@ class MainWorkplace extends PureComponent {
     }
 }
 
-export default MainWorkplace;
+export default NodeManager;

@@ -1,7 +1,7 @@
-import { queryPathNode, createNode, updateNode } from '@/services/api/pathnode'
+import { queryPathNode, createNode, updateNode, deleteNode } from '@/services/api/pathnode'
 
 export default {
-    namespace: 'pathnode',
+    namespace: 'node_manager',
 
     state: {
         pathStack: [],
@@ -19,7 +19,7 @@ export default {
 
             let { node, condition, currentPage, pageSize } = payload ? payload : {};
             if (!node) {
-                node = yield select(state => state.pathnode.currentNode);
+                node = yield select(state => state.node_manager.currentNode);
             }
             condition = condition ? condition : {};
             const conditionParam = { ...condition, parent: node.id };
@@ -45,15 +45,14 @@ export default {
         },
 
         *create({ payload }, { select, call, put }) {
-            const currentNode = yield select(state => state.pathnode.currentNode);
+            const currentNode = yield select(state => state.node_manager.currentNode);
             const response = yield call(createNode, { ...payload, parent: currentNode.id });
             if (response.code === 0) {
                 yield put({ type: 'fetch', payload: { node: currentNode } });
             }
         },
 
-        *update({ payload }, { select, call, put }) {
-            const currentNode = yield select(state => state.pathnode.currentNode);
+        *update({ payload }, { call, put }) {
             const response = yield call(updateNode, payload);
             if (response.code === 0) {
                 const node = response.data.node;
@@ -67,6 +66,14 @@ export default {
             }
             else {
                 return { success: false, error: response.error };
+            }
+        },
+
+        *delete({ payload }, { select, call, put }) {
+            const currentNode = yield select(state => state.node_manager.currentNode);
+            const response = yield call(deleteNode, payload);
+            if (response.code === 0) {
+                yield put({ type: 'fetch', payload: { node: currentNode } });
             }
         },
     },

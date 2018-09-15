@@ -26,3 +26,11 @@ export async function updateNode(params) {
     body: params,
   });
 }
+
+export async function deleteNode(ids) {
+  const params = { ids };
+  return request(ApiBase + '/api/node/delete', {
+    method: 'POST',
+    body: params,
+  });
+}

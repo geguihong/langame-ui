@@ -9,6 +9,7 @@ export default {
   'menu.workplace': '工作区',
   'menu.workplace.overview': '词条管理',
   'menu.workplace.query': '词条查询',
+  'menu.workplace.edit': '词条编辑',
   'menu.deploy': '发布翻译',
   'menu.tag': '标签',
   'menu.export': '内容导出',
