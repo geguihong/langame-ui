@@ -216,13 +216,13 @@ class NodeManager extends PureComponent {
         });
     }
 
-    goEdit = (node) => {
+    goEdit = (node, recursion) => {
         router.push({
             pathname: '/workplace/edit',
             query: {
                 type: node.type,
                 node: node.id,
-                recursion: true
+                recursion
             },
         });
     }
@@ -292,6 +292,23 @@ class NodeManager extends PureComponent {
                 break;
         }
     };
+
+    handleEditActionMenuClick = e => {
+        const {
+            node_manager: { currentNode }
+        } = this.props;
+
+        switch (e.key) {
+            case 'normal':
+                this.goEdit(currentNode, false);
+                break;
+            case 'recursion':
+                this.goEdit(currentNode, true);
+                break;
+            default:
+                break;
+        }
+    }
 
     handleSelectRows = rows => {
         this.setState({
@@ -529,6 +546,13 @@ class NodeManager extends PureComponent {
             </Menu>
         );
 
+        const editActionMenu = (
+            <Menu onClick={this.handleEditActionMenuClick} selectedKeys={[]}>
+                <Menu.Item key="normal">仅当前目录</Menu.Item>
+                <Menu.Item key="recursion">包含所有子目录</Menu.Item>
+            </Menu>
+        );
+
         const parentMethods = {
             handleAdd: this.handleAdd,
             handleModalVisible: this.handleModalVisible,
@@ -548,9 +572,13 @@ class NodeManager extends PureComponent {
                             <Button icon="plus" type="primary" onClick={() => this.handleModalVisible(true)}>
                                 新建
                             </Button>
+                            <Dropdown overlay={editActionMenu}>
+                                <Button>
+                                    编辑文案 <Icon type="down" />
+                                </Button>
+                            </Dropdown>
                             {selectedRows.length > 0 && (
                                 <span>
-                                    <Button onClick={this.goEdit}>编辑文案</Button>
                                     <Dropdown overlay={menu}>
                                         <Button>
                                             更多操作 <Icon type="down" />

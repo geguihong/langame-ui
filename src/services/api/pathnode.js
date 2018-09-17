@@ -12,6 +12,11 @@ export async function queryPathNode(condition, page_number, page_size) {
   return request(ApiBase + `/api/node/query?${stringify(params)}`);
 }
 
+export async function getNode(id) {
+  const params = { id };
+  return request(ApiBase + `/api/node/getNode?${stringify(params)}`);
+}
+
 export async function createNode(params) {
   const method = params.type === 'path' ? 'createDir' : 'createEntry';
   return request(ApiBase + '/api/node/' + method, {

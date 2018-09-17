@@ -5,7 +5,7 @@ export default {
 
     state: {
         pathStack: [],
-        currentNode: { id: 1, name: "Root", parent: 0 },
+        currentNode: { id: 1, name: "Root", parent: 0, type: "path" },
         nodes: {
             list: [],
             pagination: {}
