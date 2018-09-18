@@ -109,6 +109,7 @@ class Workplace extends PureComponent {
 
   render() {
     const {
+      currentProject,
       currentUser,
       currentUserLoading,
       project: { notice },
@@ -125,10 +126,10 @@ class Workplace extends PureComponent {
           </div>
           <div className={styles.content}>
             <div className={styles.contentTitle}>
-              Insta360官方网站
+              {currentProject.name}
             </div>
             <div>
-              Chase Adventure
+              Chase Adventurexx
             </div>
           </div>
         </div>

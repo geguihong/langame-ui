@@ -1,4 +1,4 @@
-import { fakeRegister } from '@/services/api';
+import { signup } from '@/services/api/user';
 import { setAuthority } from '@/utils/authority';
 import { reloadAuthorized } from '@/utils/Authorized';
 
@@ -11,11 +11,20 @@ export default {
 
   effects: {
     *submit({ payload }, { call, put }) {
-      const response = yield call(fakeRegister, payload);
+      const response = yield call(signup, payload);
+
+      const status = response.code === 0 ? 'ok' : 'error';
       yield put({
         type: 'registerHandle',
-        payload: response,
+        payload: { status },
       });
+
+      if (response.code === 0) {
+        yield put({
+          type: 'login/onLoginSuccess',
+          payload: response.data,
+        });
+      }
     },
   },
 

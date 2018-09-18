@@ -38,6 +38,7 @@ const links = [
 ];
 
 @connect(({ user, project, activities, chart, loading }) => ({
+  currentProject: project.currentProject,
   currentUser: user.currentUser,
   project,
   activities,
@@ -109,6 +110,7 @@ class Workplace extends PureComponent {
 
   render() {
     const {
+      currentProject,
       currentUser,
       currentUserLoading,
       project: { notice },
@@ -125,7 +127,7 @@ class Workplace extends PureComponent {
           </div>
           <div className={styles.content}>
             <div className={styles.contentTitle}>
-              Insta360官方网站
+              {currentProject ? currentProject.name: null}
             </div>
             <div>
               Chase Adventure

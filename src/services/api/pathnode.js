@@ -17,6 +17,11 @@ export async function getNode(id) {
   return request(ApiBase + `/api/node/getNode?${stringify(params)}`);
 }
 
+export async function getProjectRootNode(project_id) {
+  const params = { project_id };
+  return request(ApiBase + `/api/node/getProjectRootNode?${stringify(params)}`);
+}
+
 export async function createNode(params) {
   const method = params.type === 'path' ? 'createDir' : 'createEntry';
   return request(ApiBase + '/api/node/' + method, {

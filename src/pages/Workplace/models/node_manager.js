@@ -1,4 +1,4 @@
-import { queryPathNode, createNode, updateNode, deleteNode } from '@/services/api/pathnode'
+import { getProjectRootNode, queryPathNode, createNode, updateNode, deleteNode } from '@/services/api/pathnode'
 
 export default {
     namespace: 'node_manager',
@@ -14,6 +14,17 @@ export default {
     },
 
     effects: {
+        *loadRoot({ payload }, { call, put }) {
+            const response = yield call(getProjectRootNode, payload.id);
+            if (response.code === 0) {
+                const node = response.data.node;
+                yield put({
+                    type: 'fetch',
+                    payload: { node }
+                });
+            }
+        },
+
         *fetch({ payload }, { select, call, put }) {
             yield put({ type: 'setLoading' });
 

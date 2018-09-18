@@ -157,7 +157,8 @@ class UpdateForm extends PureComponent {
 }
 
 /* eslint react/no-multi-comp:0 */
-@connect(({ node_manager }) => ({
+@connect(({ node_manager, project }) => ({
+    currentProject: project.currentProject,
     node_manager
 }))
 @Form.create()
@@ -204,7 +205,22 @@ class NodeManager extends PureComponent {
     ];
 
     componentDidMount() {
-        this.openDir(null);
+        this.loadProject();
+    }
+
+    componentDidUpdate() {
+        this.loadProject();
+    }
+
+    loadProject = () => {
+        const { dispatch, currentProject, node_manager: { currentNode } } = this.props;
+
+        if (!currentNode || currentNode.project !== currentProject.id) {
+            dispatch({
+                type: 'node_manager/loadRoot',
+                payload: currentProject
+            });
+        }
     }
 
     openDir = (node) => {

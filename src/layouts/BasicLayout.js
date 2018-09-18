@@ -10,12 +10,15 @@ import pathToRegexp from 'path-to-regexp';
 import { enquireScreen, unenquireScreen } from 'enquire-js';
 import { formatMessage } from 'umi/locale';
 import SiderMenu from '@/components/SiderMenu';
+import Exception from '@/components/Exception';
 import Authorized from '@/utils/Authorized';
 import SettingDrawer from '@/components/SettingDrawer';
 import logo from '../assets/logo.svg';
 import Footer from './Footer';
 import Header from './Header';
 import Context from './MenuContext';
+import { getToken } from '@/services/user'
+import router from 'umi/router';
 
 const { Content } = Layout;
 
@@ -84,13 +87,6 @@ class BasicLayout extends React.PureComponent {
   };
 
   componentDidMount() {
-    const { dispatch } = this.props;
-    dispatch({
-      type: 'user/fetchCurrent',
-    });
-    dispatch({
-      type: 'setting/getSetting',
-    });
     this.renderRef = requestAnimationFrame(() => {
       this.setState({
         rendering: false,
@@ -104,6 +100,24 @@ class BasicLayout extends React.PureComponent {
         });
       }
     });
+
+    if (!getToken()) {
+      router.replace({
+        pathname: '/user/login',
+        query: {
+          redirect: window.location.href,
+        },
+      });
+    }
+    else {
+      const { dispatch } = this.props;
+      dispatch({
+        type: 'user/fetchCurrent',
+      });
+      dispatch({
+        type: 'setting/getSetting',
+      });
+    }
   }
 
   componentDidUpdate(preProps) {
@@ -203,6 +217,7 @@ class BasicLayout extends React.PureComponent {
 
   render() {
     const {
+      currentProject,
       navTheme,
       layout: PropsLayout,
       children,
@@ -237,7 +252,16 @@ class BasicLayout extends React.PureComponent {
             isMobile={isMobile}
             {...this.props}
           />
-          <Content style={this.getContentStyle()}>{children}</Content>
+          <Content style={this.getContentStyle()}>
+            {
+              currentProject
+                ? children
+                : <Exception
+                  title="提示"
+                  desc="请先创建/加入项目"
+                  actions={<span></span>}/>
+            }
+          </Content>
           <Footer />
         </Layout>
       </Layout>
@@ -261,7 +285,8 @@ class BasicLayout extends React.PureComponent {
   }
 }
 
-export default connect(({ global, setting }) => ({
+export default connect(({ global, setting, project }) => ({
+  currentProject: project.currentProject,
   collapsed: global.collapsed,
   layout: setting.layout,
   ...setting,

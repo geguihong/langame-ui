@@ -5,6 +5,7 @@ import moment from 'moment';
 import groupBy from 'lodash/groupBy';
 import NoticeIcon from '../NoticeIcon';
 import HeaderSearch from '../HeaderSearch';
+import ProjectCreation from '../ProjectCreation';
 import styles from './index.less';
 
 export default class GlobalHeaderRight extends PureComponent {
@@ -57,6 +58,7 @@ export default class GlobalHeaderRight extends PureComponent {
       onNoticeClear,
       theme,
     } = this.props;
+
     const menu = (
       <Menu className={styles.menu} selectedKeys={[]} onClick={onMenuClick}>
         <Menu.Item key="userCenter">
@@ -85,6 +87,7 @@ export default class GlobalHeaderRight extends PureComponent {
     }
     return (
       <div className={className}>
+        <ProjectCreation />
         <HeaderSearch
           className={`${styles.action} ${styles.search}`}
           placeholder="站内搜索"

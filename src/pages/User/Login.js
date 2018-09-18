@@ -77,23 +77,14 @@ class LoginPage extends Component {
         >
           <Tab key="account" tab="账户密码登录">
             {login.status === 'error' &&
-              login.type === 'account' &&
               !submitting &&
-              this.renderMessage('账户或密码错误（admin/888888）')}
-            <UserName name="userName" placeholder="admin/user" />
+              this.renderMessage('账户或密码错误')}
+            <UserName name="username" placeholder="请输入账号" />
             <Password
               name="password"
-              placeholder="888888/123456"
+              placeholder="请输入密码"
               onPressEnter={() => this.loginForm.validateFields(this.handleSubmit)}
             />
-          </Tab>
-          <Tab key="mobile" tab="手机号登录">
-            {login.status === 'error' &&
-              login.type === 'mobile' &&
-              !submitting &&
-              this.renderMessage('验证码错误')}
-            <Mobile name="mobile" />
-            <Captcha name="captcha" countDown={120} onGetCaptcha={this.onGetCaptcha} />
           </Tab>
           <div>
             <Checkbox checked={autoLogin} onChange={this.changeAutoLogin}>
@@ -101,17 +92,13 @@ class LoginPage extends Component {
             </Checkbox>
             <a style={{ float: 'right' }} href="">
               忘记密码
-            </a>
+              </a>
           </div>
           <Submit loading={submitting}>登录</Submit>
           <div className={styles.other}>
-            其他登录方式
-            <Icon type="alipay-circle" className={styles.icon} theme="outlined" />
-            <Icon type="taobao-circle" className={styles.icon} theme="outlined" />
-            <Icon type="weibo-circle" className={styles.icon} theme="outlined" />
             <Link className={styles.register} to="/User/Register">
               注册账户
-            </Link>
+              </Link>
           </div>
         </Login>
       </div>
