@@ -11,6 +11,7 @@ import {
     Select,
     message,
 } from 'antd';
+import router from 'umi/router';
 
 const FormItem = Form.Item;
 const Option = Select.Option;
@@ -101,6 +102,8 @@ class ProjectCreation extends Component {
                 type: 'project/switch',
                 payload: projects[key]
             });
+
+            router.push('/refresh');
         }
     }
 

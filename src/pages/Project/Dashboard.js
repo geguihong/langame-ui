@@ -1,5 +1,4 @@
 import React, { PureComponent } from 'react';
-import moment from 'moment';
 import { connect } from 'dva';
 import Link from 'umi/link';
 import { Row, Col, Card, List, Avatar } from 'antd';
@@ -7,7 +6,7 @@ import { Row, Col, Card, List, Avatar } from 'antd';
 import { Radar } from '@/components/Charts';
 import EditableLinkGroup from '@/components/EditableLinkGroup';
 import PageHeaderWrapper from '@/components/PageHeaderWrapper';
-
+import ActionRecordDisplay from '@/components/ActionRecordDisplay';
 import styles from './Dashboard.less';
 
 const links = [
@@ -37,10 +36,12 @@ const links = [
   },
 ];
 
-@connect(({ user, project, activities, chart, loading }) => ({
+@connect(({ user, project, member, actions, activities, chart, loading }) => ({
   currentProject: project.currentProject,
   currentUser: user.currentUser,
   project,
+  member,
+  actions,
   activities,
   chart,
   currentUserLoading: loading.effects['user/fetchCurrent'],
@@ -54,13 +55,13 @@ class Workplace extends PureComponent {
       type: 'user/fetchCurrent',
     });
     dispatch({
-      type: 'project/fetchNotice',
+      type: 'member/fetch',
+    });
+    dispatch({
+      type: 'actions/fetchList',
     });
     dispatch({
       type: 'activities/fetchList',
-    });
-    dispatch({
-      type: 'chart/fetch',
     });
   }
 
@@ -73,37 +74,30 @@ class Workplace extends PureComponent {
 
   renderActivities() {
     const {
-      activities: { list },
+      actions: { list },
     } = this.props;
     return list.map(item => {
-      const events = item.template.split(/@\{([^{}]*)\}/gi).map(key => {
-        if (item[key]) {
-          return (
-            <a href={item[key].link} key={item[key].name}>
-              {item[key].name}
-            </a>
-          );
-        }
-        return key;
-      });
       return (
-        <List.Item key={item.id}>
-          <List.Item.Meta
-            avatar={<Avatar src={item.user.avatar} />}
-            title={
-              <span>
-                <a className={styles.username}>{item.user.name}</a>
-                &nbsp;
-                <span className={styles.event}>{events}</span>
-              </span>
-            }
-            description={
-              <span className={styles.datetime} title={item.updatedAt}>
-                {moment(item.updatedAt).fromNow()}
-              </span>
-            }
-          />
-        </List.Item>
+        <ActionRecordDisplay key={item.id} item={item} />
+        // <List.Item key={item.id}>
+        //   <List.Item.Meta
+        //     avatar={<Avatar src={item.subject.avatar} icon="user" />}
+        //     title={
+        //       <span>
+        //         <a className={styles.username}>{item.subject.nickname}</a>
+        //         &nbsp;
+        //         <span className={styles.event}>
+        //           {renderActionRecord(item)}
+        //         </span>
+        //       </span>
+        //     }
+        //     description={
+        //       <span className={styles.datetime} title={item.create_time}>
+        //         {moment(item.create_time).fromNow()}
+        //       </span>
+        //     }
+        //   />
+        // </List.Item>
       );
     });
   }
@@ -114,8 +108,9 @@ class Workplace extends PureComponent {
       currentUser,
       currentUserLoading,
       project: { notice },
+      member: { members },
+      actions: { loading: activitiesLoading },
       projectLoading,
-      activitiesLoading,
       chart: { radarData },
     } = this.props;
 
@@ -127,7 +122,7 @@ class Workplace extends PureComponent {
           </div>
           <div className={styles.content}>
             <div className={styles.contentTitle}>
-              {currentProject ? currentProject.name: null}
+              {currentProject ? currentProject.name : null}
             </div>
             <div>
               Chase Adventure
@@ -162,6 +157,7 @@ class Workplace extends PureComponent {
               bordered={false}
               className={styles.activeCard}
               title="动态"
+              extra={<a href="#">更多</a>}
               loading={activitiesLoading}
             >
               <List loading={activitiesLoading} size="large">
@@ -176,7 +172,7 @@ class Workplace extends PureComponent {
               bordered={false}
               bodyStyle={{ padding: 0 }}
             >
-              <EditableLinkGroup onAdd={() => {}} links={links} linkElement={Link} />
+              <EditableLinkGroup onAdd={() => { }} links={links} linkElement={Link} />
             </Card>
             <Card
               bodyStyle={{ paddingTop: 12, paddingBottom: 12 }}
@@ -186,11 +182,11 @@ class Workplace extends PureComponent {
             >
               <div className={styles.members}>
                 <Row gutter={48}>
-                  {notice.map(item => (
-                    <Col span={12} key={`members-item-${item.id}`}>
-                      <Link to={item.href}>
-                        <Avatar src={item.logo} size="small" />
-                        <span className={styles.member}>{item.member}</span>
+                  {members.map((member, k) => (
+                    <Col span={12} key={k}>
+                      <Link to="">
+                        <Avatar src={member.user.avatar} icon="user" size="small" />
+                        <span className={styles.member}>{member.user.nickname ? member.user.nickname : member.user.username}</span>
                       </Link>
                     </Col>
                   ))}

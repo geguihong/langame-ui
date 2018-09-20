@@ -22,8 +22,6 @@ export default {
       const response = yield call(getUser);
       if (response.code === 0) {
         const user = response.data.user;
-        user.name = user.email;
-        user.avatar = 'https://static.insta360.com/assets/www/favicons/favicon-96x96.png';
         yield put({
           type: 'saveCurrentUser',
           payload: user,

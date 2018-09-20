@@ -1,4 +1,9 @@
 export default [
+  // Refresh
+  {
+    path: '/refresh',
+    component: './Refresh',
+  },
   // user
   {
     path: '/user',
@@ -71,7 +76,7 @@ export default [
         path: '/member',
         icon: 'form',
         name: 'member',
-        component: './Forms/BasicForm',
+        component: './Project/Member',
       },
       {
         path: '/settings',

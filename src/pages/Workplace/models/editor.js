@@ -1,4 +1,5 @@
 import { queryPathNode, getNode } from '@/services/api/pathnode'
+import { getNodeEntries, updateNodeEntries } from '@/services/api/lang_entry'
 
 export default {
     namespace: 'editor',
@@ -8,7 +9,11 @@ export default {
             description: null
         },
         loading: false,
-        nodes: []
+        nodes: [],
+
+        entryStore: {},
+        loadedLanguages: {},
+        changedEntries: {}
     },
 
     effects: {
@@ -48,6 +53,36 @@ export default {
             }
         },
 
+        *loadEntry({ payload }, { select, call, put }) {
+            const language = payload;
+            const loadedLanguages = yield select(state => state.editor.loadedLanguages);
+            if (!loadedLanguages[language]) {
+                const nodes = yield select(state => state.editor.nodes);
+                const response = yield call(getNodeEntries, nodes, language);
+                if (response.code === 0) {
+                    const { entries } = response.data;
+                    yield put({
+                        type: 'saveLanguageEntries',
+                        payload: {
+                            entries,
+                            language
+                        },
+                    });
+                }
+            }
+        },
+
+        *submitChangedEntries({ payload }, { select, call, put }) {
+            const changedEntries = yield select(state => state.editor.changedEntries);
+            const entries = Object.keys(changedEntries).map(k => changedEntries[k]);
+            if (entries.length) {
+                const response = yield call(updateNodeEntries, entries);
+                if (response.code === 0) {
+                    yield put({ type: 'resetChangedEntries' });
+                }
+            }
+        }
+
     },
 
     reducers: {
@@ -62,7 +97,10 @@ export default {
             return {
                 ...state,
                 nodes: action.payload,
-                loading: false
+                loading: false,
+                entryStore: {},
+                loadedLanguages: {},
+                changedEntries: {}
             }
         },
 
@@ -71,6 +109,63 @@ export default {
                 ...state,
                 overview: action.payload
             }
+        },
+
+        saveLanguageEntries(state, { payload }) {
+            const { entries, language } = payload;
+            const { loadedLanguages, entryStore } = state;
+            loadedLanguages[language] = true;
+
+            for (let i in entries) {
+                const map = entries[i];
+                for (let j in map) {
+                    const entry = map[j];
+                    if (!entryStore[i]) {
+                        entryStore[i] = {};
+                    }
+                    entry.originContent = entry.content;
+                    entryStore[i][j] = entry;
+                }
+            }
+
+            return {
+                ...state,
+                loading: false,
+                loadedLanguages,
+                entryStore
+            }
+        },
+
+        updateNodeEntry(state, { payload }) {
+            const { nodeId, language, content } = payload;
+            const { entryStore, changedEntries } = state;
+            const map = entryStore[`${nodeId}`] ? entryStore[`${nodeId}`] : (entryStore[`${nodeId}`] = {});
+            const entry = map[language] ? map[language] : (map[language] = {
+                node: nodeId,
+                language,
+                originContent: ''
+            });
+            entry.content = content;
+
+            const changedKey = `${nodeId}_${language}`;
+            const changed = entry.content !== entry.originContent;
+            if (changed) {
+                changedEntries[changedKey] = entry;
+            }
+            else {
+                delete changedEntries[changedKey];
+            }
+
+            return { ...state, entryStore, changedEntries }
+        },
+
+        resetChangedEntries(state, action) {
+            const { changedEntries } = state;
+            Object.keys(changedEntries).forEach(k => {
+                const entry = changedEntries[k];
+                entry.originContent = entry.content;
+            });
+            return { ...state, changedEntries: {} }
         }
     }
 }

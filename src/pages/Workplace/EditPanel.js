@@ -1,19 +1,14 @@
 import React, { Component } from 'react';
 import { connect } from 'dva';
-import { Table, Tag, Divider, Alert, Input, Row, Col, Select } from 'antd'
+import { Table, Tag, Button, Alert, Input, Row, Col, Select } from 'antd'
 import PageHeaderWrapper from '@/components/PageHeaderWrapper';
+import { Languages } from '@/services/languages'
 
 import styles from './EditPanel.less';
 
 const TextArea = Input.TextArea;
 
-const Languages = {
-    'zh-CN': { key: 'zh-CN', name: '中文' },
-    'en-US': { key: 'en-US', name: '英文' },
-    'kr-KR': { key: 'kr-KR', name: '韩语' },
-    'fr-FR': { key: 'fr-FR', name: '法语' },
-    'ja-JP': { key: 'ja-JP', name: '日文' },
-};
+
 const LanguagesKeys = Object.keys(Languages);
 
 @connect(({ editor }) => ({
@@ -23,7 +18,7 @@ class EditPanel extends Component {
 
     state = {
         referenceLanuage: "",
-        editLanuage: LanguagesKeys[1],
+        editLanuage: "",
     }
 
     componentDidMount() {
@@ -31,11 +26,28 @@ class EditPanel extends Component {
         this.loadNodes({ type, node, recursion });
     }
 
+    switchLanguage = (key, language) => {
+        if (key === 'reference') {
+            this.setState({ referenceLanuage: language });
+        }
+        else {
+            this.setState({ editLanuage: language });
+        }
+
+        const { dispatch } = this.props;
+        dispatch({
+            type: 'editor/loadEntry',
+            payload: language
+        });
+    }
+
     loadNodes = (params) => {
         const { dispatch } = this.props;
         dispatch({
             type: 'editor/fetch',
             payload: params
+        }).then(() => {
+            this.switchLanguage('edit', LanguagesKeys[1]);
         });
     }
 
@@ -80,7 +92,7 @@ class EditPanel extends Component {
             const isreference = languages.length > 1 && k === 0;
             columns.push({
                 title: `${isreference ? "参考语言" : "编辑语言"}：${Languages[element].name}`,
-                key: element,
+                key: isreference ? 'reference' : 'edit',
                 render() { return { props: { colSpan: 0 } } }
             });
         });
@@ -90,12 +102,24 @@ class EditPanel extends Component {
 
     getExpandedRowRender = (languages) => {
         return (node) => {
+            const { editor: { entryStore } } = this.props;
             return <Row gutter={{ xs: 8, sm: 16, md: 24, lg: 32 }}>
                 {
                     languages.map((v, k) => {
                         const isreference = languages.length > 1 && k === 0;
+                        const nodeLanguages = entryStore[`${node.id}`];
+                        const entry = nodeLanguages ? nodeLanguages[v] : null;
+                        const content = entry ? entry.content : null;
+                        const originContent = entry ? entry.originContent : null;
+                        const changed = content !== originContent;
                         return <Col key={k} span={24 / languages.length}>
-                            <TextArea rows={3} value={node.name} disabled={isreference} />
+                            <TextArea rows={3}
+                                disabled={isreference}
+                                value={isreference ? originContent : content}
+                                onChange={e => this.handleEntryChange(node.id, v, e.target.value)} />
+                            <div className={styles.editItemActions}>
+                                {!isreference && changed ? <a onClick={() => this.handleEntryChange(node.id, v, originContent)}>取消编辑</a> : null}
+                            </div>
                         </Col>
                     })
                 }
@@ -103,11 +127,27 @@ class EditPanel extends Component {
         };
     }
 
+    handleEntryChange = (nodeId, language, content) => {
+        const { dispatch } = this.props;
+        dispatch({
+            type: 'editor/updateNodeEntry',
+            payload: { nodeId, language, content }
+        });
+    }
+
+    saveEntries = () => {
+        const { dispatch } = this.props;
+        dispatch({
+            type: 'editor/submitChangedEntries'
+        });
+    }
+
     render() {
         const {
             loading,
             nodes,
-            overview
+            overview,
+            changedEntries
         } = this.props.editor;
         const {
             referenceLanuage,
@@ -116,12 +156,13 @@ class EditPanel extends Component {
         const languages = this.getLanguages();
         const columns = this.getColumns(languages);
         const expandedRowRender = this.getExpandedRowRender(languages);
+        const entriesChanged = !!Object.keys(changedEntries).length;
 
         const pageHeaderContent =
             <Row className={styles.pageHeaderContent}>
                 <Col span={4}>
                     <span>参考语言：</span>
-                    <Select value={referenceLanuage} style={{ width: 120 }} onChange={value => this.setState({ referenceLanuage: value })} >
+                    <Select value={referenceLanuage} style={{ width: 120 }} onChange={value => this.switchLanguage('reference', value)} >
                         <Select.Option value="">无</Select.Option>
                         {
                             LanguagesKeys.map((v, k) => {
@@ -132,13 +173,18 @@ class EditPanel extends Component {
                 </Col>
                 <Col span={4}>
                     <span>编辑语言：</span>
-                    <Select value={editLanuage} style={{ width: 120 }} onChange={value => this.setState({ editLanuage: value })} >
+                    <Select value={editLanuage} style={{ width: 120 }} disabled={entriesChanged} onChange={value => this.switchLanguage('edit', value)} >
                         {
                             LanguagesKeys.map((v, k) => {
                                 return <Select.Option key={k} value={v}>{Languages[v].name}</Select.Option>
                             })
                         }
                     </Select>
+                </Col>
+                <Col className={styles.editActions} span={16}>
+                    {
+                        entriesChanged ? <Button type="primary" onClick={this.saveEntries}>保存文案</Button> : null
+                    }
                 </Col>
             </Row>;
 

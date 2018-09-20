@@ -37,9 +37,10 @@ const links = [
   },
 ];
 
-@connect(({ user, project, activities, chart, loading }) => ({
+@connect(({ user, project, member, activities, chart, loading }) => ({
   currentUser: user.currentUser,
   project,
+  member,
   activities,
   chart,
   currentUserLoading: loading.effects['user/fetchCurrent'],
