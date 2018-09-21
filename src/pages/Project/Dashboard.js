@@ -111,7 +111,6 @@ class Workplace extends PureComponent {
       member: { members },
       actions: { loading: activitiesLoading },
       projectLoading,
-      chart: { radarData },
     } = this.props;
 
     const pageHeaderContent =
