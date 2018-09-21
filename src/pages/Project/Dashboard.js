@@ -3,38 +3,12 @@ import { connect } from 'dva';
 import Link from 'umi/link';
 import { Row, Col, Card, List, Avatar } from 'antd';
 
-import { Radar } from '@/components/Charts';
 import EditableLinkGroup from '@/components/EditableLinkGroup';
 import PageHeaderWrapper from '@/components/PageHeaderWrapper';
 import ActionRecordDisplay from '@/components/ActionRecordDisplay';
-import styles from './Dashboard.less';
 
-const links = [
-  {
-    title: '中文',
-    href: '',
-  },
-  {
-    title: '英文',
-    href: '',
-  },
-  {
-    title: '葡萄牙语',
-    href: '',
-  },
-  {
-    title: '韩语',
-    href: '',
-  },
-  {
-    title: '日语',
-    href: '',
-  },
-  {
-    title: '阿拉伯语',
-    href: '',
-  },
-];
+import { Languages } from '@/services/languages'
+import styles from './Dashboard.less';
 
 @connect(({ user, project, member, actions, activities, chart, loading }) => ({
   currentProject: project.currentProject,
@@ -100,6 +74,15 @@ class Workplace extends PureComponent {
         // </List.Item>
       );
     });
+  }
+
+  getLanguageLinks = () => {
+    const { currentProject } = this.props;
+    const temp = currentProject.languages.split(",").reduce((map, s) => { map[s] = true; return map; }, {});
+    return Object.keys(Languages).filter(s => !!temp[s]).map(s => ({
+      title: Languages[s].name,
+      href: '',
+    }));
   }
 
   render() {
@@ -171,7 +154,7 @@ class Workplace extends PureComponent {
               bordered={false}
               bodyStyle={{ padding: 0 }}
             >
-              <EditableLinkGroup onAdd={() => { }} links={links} linkElement={Link} />
+              <EditableLinkGroup onAdd={() => { }} links={this.getLanguageLinks()} linkElement={Link} />
             </Card>
             <Card
               bodyStyle={{ paddingTop: 12, paddingBottom: 12 }}

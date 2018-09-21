@@ -8,22 +8,26 @@ import styles from './EditPanel.less';
 
 const TextArea = Input.TextArea;
 
-
-const LanguagesKeys = Object.keys(Languages);
-
-@connect(({ editor }) => ({
-    editor
+@connect(({ editor, project }) => ({
+    editor,
+    currentProject: project.currentProject
 }))
 class EditPanel extends Component {
 
     state = {
+        languageKeys: [],
         referenceLanuage: "",
         editLanuage: "",
     }
 
     componentDidMount() {
-        const { type, node, recursion } = this.props.location.query;
-        this.loadNodes({ type, node, recursion });
+        const { currentProject } = this.props;
+        const temp = currentProject.languages.split(",").reduce((map, s) => { map[s] = true; return map; }, {});
+        const languageKeys = Object.keys(Languages).filter(s => !!temp[s])
+        this.setState({ languageKeys }, () => {
+            const { type, node, recursion } = this.props.location.query;
+            this.loadNodes({ type, node, recursion });
+        });
     }
 
     switchLanguage = (key, language) => {
@@ -43,11 +47,12 @@ class EditPanel extends Component {
 
     loadNodes = (params) => {
         const { dispatch } = this.props;
+        const { languageKeys } = this.state;
         dispatch({
             type: 'editor/fetch',
             payload: params
         }).then(() => {
-            this.switchLanguage('edit', LanguagesKeys[1]);
+            this.switchLanguage('edit', languageKeys[0]);
         });
     }
 
@@ -152,6 +157,7 @@ class EditPanel extends Component {
         const {
             referenceLanuage,
             editLanuage,
+            languageKeys
         } = this.state;
         const languages = this.getLanguages();
         const columns = this.getColumns(languages);
@@ -165,7 +171,7 @@ class EditPanel extends Component {
                     <Select value={referenceLanuage} style={{ width: 120 }} onChange={value => this.switchLanguage('reference', value)} >
                         <Select.Option value="">无</Select.Option>
                         {
-                            LanguagesKeys.map((v, k) => {
+                            languageKeys.map((v, k) => {
                                 return <Select.Option key={k} value={v}>{Languages[v].name}</Select.Option>
                             })
                         }
@@ -175,7 +181,7 @@ class EditPanel extends Component {
                     <span>编辑语言：</span>
                     <Select value={editLanuage} style={{ width: 120 }} disabled={entriesChanged} onChange={value => this.switchLanguage('edit', value)} >
                         {
-                            LanguagesKeys.map((v, k) => {
+                            languageKeys.map((v, k) => {
                                 return <Select.Option key={k} value={v}>{Languages[v].name}</Select.Option>
                             })
                         }
@@ -208,7 +214,13 @@ class EditPanel extends Component {
                     expandRowByClick={true}
                     expandedRowKeys={nodes.map((v) => `${v.id}`)}
                     dataSource={nodes}
-                    pagination={false} />
+                    pagination={{
+                        position: 'both',
+                        showSizeChanger: true,
+                        defaultPageSize: 30,
+                        pageSizeOptions: ['30', '50', '100'],
+                        showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} items`
+                    }} />
             </PageHeaderWrapper>
         );
     }

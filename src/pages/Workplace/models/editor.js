@@ -27,7 +27,7 @@ export default {
                 recursion,
                 type: 'entry'
             };
-
+            
             // 获取编辑内容概述
             if (node > 0) {
                 const response = yield call(getNode, node);
@@ -42,14 +42,17 @@ export default {
                 }
             }
 
+            console.log('b ', Date.parse(new Date()));
             // 获取词条
             const response = yield call(queryPathNode, conditionParam, 1, 10000);
+            console.log('b1 ', Date.parse(new Date()));
             if (response.code === 0) {
                 const { list } = response.data;
                 yield put({
                     type: 'setNodes',
                     payload: list,
                 });
+                console.log('b2 ', Date.parse(new Date()));
             }
         },
 
@@ -58,7 +61,10 @@ export default {
             const loadedLanguages = yield select(state => state.editor.loadedLanguages);
             if (!loadedLanguages[language]) {
                 const nodes = yield select(state => state.editor.nodes);
+
+                console.log('c ', Date.parse(new Date()));
                 const response = yield call(getNodeEntries, nodes, language);
+                console.log('c1 ', Date.parse(new Date()));
                 if (response.code === 0) {
                     const { entries } = response.data;
                     yield put({
@@ -68,6 +74,8 @@ export default {
                             language
                         },
                     });
+
+                    console.log('c2 ', Date.parse(new Date()));
                 }
             }
         },
