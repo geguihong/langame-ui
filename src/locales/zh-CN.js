@@ -13,6 +13,8 @@ export default {
   'menu.deploy': '发布翻译',
   'menu.tag': '标签',
   'menu.export': '内容导出',
+  'menu.export.task': '导出任务',
+  'menu.export.setting': '导出配置',
   
   'app.home.introduce': '介绍',
   'app.analysis.test': '工专路 {no} 号店',

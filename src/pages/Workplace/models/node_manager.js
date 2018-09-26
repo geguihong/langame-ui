@@ -113,7 +113,7 @@ export default {
                 nodes,
                 currentNode,
                 pathStack,
-                loading: false
+                loading: false,
             };
         },
 

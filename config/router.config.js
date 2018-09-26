@@ -55,16 +55,27 @@ export default [
         ],
       },
       {
+        path: '/export',
+        name: 'export',
+        icon: 'warning',
+        routes: [
+          {
+            name: 'setting',
+            path: '/export/setting',
+            component: './Export/Setting',
+          },
+          {
+            name: 'task',
+            path: '/export/task',
+            component: './Export/Task',
+          }
+        ]
+      },
+      {
         path: '/deploy',
         name: 'deploy',
         icon: 'profile',
         component: './Profile/BasicProfile',
-      },
-      {
-        name: 'export',
-        icon: 'warning',
-        path: '/exception',
-        component: './Exception/403',
       },
       {
         path: '/tag',

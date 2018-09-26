@@ -17,7 +17,7 @@ import {
     DatePicker,
     Modal,
     message,
-    Badge,
+    Tag,
     Divider,
     Steps,
     Radio,
@@ -175,26 +175,30 @@ class NodeManager extends PureComponent {
     columns = [
         {
             title: '节点名称',
-            dataIndex: 'name',
-            render: (val, node) => {
+            key: 'name',
+            render: node => {
                 return node.type === 'path'
-                    ? <a onClick={this.openDir.bind(this, node)}><Icon type="folder" theme="outlined" /> {val}</a>
-                    : <span><Icon type="file-text" theme="outlined" /> {val}</span>
+                    ? <a onClick={this.openDir.bind(this, node)}><Icon type="folder" theme="outlined" /> {node.name}</a>
+                    : <span><Icon type="file-text" theme="outlined" />
+                        {node.name}
+                        {/* {node.export_alias ? <Tag style={{ marginLeft: 10 }}>导出别名：{node.export_alias}</Tag> : null} */}
+                    </span>
             }
         },
         {
             title: '描述',
+            key: 'description',
             dataIndex: 'description',
         },
         {
             title: '创建时间',
-            dataIndex: 'updatedAt',
-            sorter: true,
-            render: val => <span>{moment(val).format('YYYY-MM-DD HH:mm:ss')}</span>,
+            key: 'time',
+            render: node => <span>{moment(node.create_time).format('YYYY-MM-DD HH:mm:ss')}</span>,
         },
         {
             title: '操作',
-            render: (text, node) => (
+            key: 'operation',
+            render: node => (
                 <Fragment>
                     <a onClick={() => this.handleUpdateModalVisible(true, node)}>修改</a>
                     <Divider type="vertical" />
@@ -216,13 +220,16 @@ class NodeManager extends PureComponent {
         });
     }
 
-    openDir = (node) => {
+    openDir = (node, pagination) => {
         const { formValues } = this.state;
         const { dispatch } = this.props;
+        const paginationArg = pagination ? pagination : {};
         dispatch({
             type: 'node_manager/fetch',
-            payload: { node, condition: formValues }
+            payload: { node, condition: formValues, ...paginationArg }
         });
+
+        this.setState({ selectedRows: [] });
     }
 
     goEdit = (node, recursion) => {
@@ -236,29 +243,11 @@ class NodeManager extends PureComponent {
         });
     }
 
-    handleStandardTableChange = (pagination, filtersArg, sorter) => {
-        const { dispatch } = this.props;
-        const { formValues } = this.state;
-
-        const filters = Object.keys(filtersArg).reduce((obj, key) => {
-            const newObj = { ...obj };
-            newObj[key] = getValue(filtersArg[key]);
-            return newObj;
-        }, {});
-
-        const params = {
+    handleStandardTableChange = (pagination) => {
+        const { currentNode } = this.props;
+        this.openDir(currentNode, {
             currentPage: pagination.current,
             pageSize: pagination.pageSize,
-            ...formValues,
-            ...filters,
-        };
-        if (sorter.field) {
-            params.sorter = `${sorter.field}_${sorter.order}`;
-        }
-
-        dispatch({
-            type: 'node_manager/fetch',
-            payload: params,
         });
     };
 
@@ -282,25 +271,43 @@ class NodeManager extends PureComponent {
     };
 
     handleMenuClick = e => {
-        const { dispatch } = this.props;
         const { selectedRows } = this.state;
 
         if (!selectedRows) return;
         switch (e.key) {
             case 'remove':
-                dispatch({
-                    type: 'node_manager/delete',
-                    payload: selectedRows.map(row => row.id)
-                }).then(() => {
-                    this.setState({
-                        selectedRows: [],
-                    });
-                });
+                this.handleRemove(selectedRows);
+                break;
+            case 'move':
+                this.handleMove(selectedRows);
                 break;
             default:
                 break;
         }
     };
+
+    handleRemove = (selectedRows) => {
+        const self = this;
+        Modal.confirm({
+            title: '操作确认',
+            content: '确认删除选中的节点？',
+            onOk() {
+                const { dispatch } = self.props;
+                dispatch({
+                    type: 'node_manager/delete',
+                    payload: selectedRows.map(row => row.id)
+                }).then(() => {
+                    self.setState({
+                        selectedRows: [],
+                    });
+                });
+            },
+        });
+    }
+
+    handleMove = (selectedRows) => {
+
+    }
 
     handleEditActionMenuClick = e => {
         const {
@@ -343,11 +350,6 @@ class NodeManager extends PureComponent {
             }, () => {
                 this.openDir(null);
             });
-
-            // dispatch({
-            //     type: 'node_manager/fetch',
-            //     payload: { condition: values },
-            // });
         });
     };
 
@@ -425,9 +427,9 @@ class NodeManager extends PureComponent {
                             <Button style={{ marginLeft: 8 }} onClick={this.handleFormReset}>
                                 重置
               </Button>
-                            <a style={{ marginLeft: 8 }} onClick={this.toggleForm}>
+                            {/* <a style={{ marginLeft: 8 }} onClick={this.toggleForm}>
                                 展开 <Icon type="down" />
-                            </a>
+                            </a> */}
                         </span>
                     </Col>
                 </Row>
@@ -551,7 +553,7 @@ class NodeManager extends PureComponent {
         const menu = (
             <Menu onClick={this.handleMenuClick} selectedKeys={[]}>
                 <Menu.Item key="remove">删除</Menu.Item>
-                <Menu.Item key="approval">批量审批</Menu.Item>
+                <Menu.Item key="move">移动到文件夹</Menu.Item>
             </Menu>
         );
 
@@ -571,6 +573,8 @@ class NodeManager extends PureComponent {
             handleUpdate: this.handleUpdate,
         };
 
+        const isItemsSelected = selectedRows.length > 0;
+
         return (
             <PageHeaderWrapper>
                 <Card bordered={false}>
@@ -581,19 +585,17 @@ class NodeManager extends PureComponent {
                             <Button icon="plus" type="primary" onClick={() => this.handleModalVisible(true)}>
                                 新建
                             </Button>
-                            <Dropdown overlay={editActionMenu}>
+                            <Dropdown overlay={editActionMenu} disabled={isItemsSelected}>
                                 <Button>
                                     编辑文案 <Icon type="down" />
                                 </Button>
                             </Dropdown>
                             {selectedRows.length > 0 && (
-                                <span>
-                                    <Dropdown overlay={menu}>
-                                        <Button>
-                                            更多操作 <Icon type="down" />
-                                        </Button>
-                                    </Dropdown>
-                                </span>
+                                <Dropdown overlay={menu}>
+                                    <Button>
+                                        更多操作 <Icon type="down" />
+                                    </Button>
+                                </Dropdown>
                             )}
                         </div>
 
