@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { List, Avatar, Tooltip } from 'antd';
 import moment from 'moment';
-import { Languages } from '@/services/languages'
+import { Languages } from '@/services/enums';
 import styles from './index.less';
 
 const renderActionRecord = (record) => {

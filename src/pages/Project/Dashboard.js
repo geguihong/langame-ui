@@ -7,7 +7,7 @@ import EditableLinkGroup from '@/components/EditableLinkGroup';
 import PageHeaderWrapper from '@/components/PageHeaderWrapper';
 import ActionRecordDisplay from '@/components/ActionRecordDisplay';
 
-import { Languages } from '@/services/languages'
+import { Languages } from '@/services/enums';
 import styles from './Dashboard.less';
 
 @connect(({ user, project, member, actions, activities, chart, loading }) => ({

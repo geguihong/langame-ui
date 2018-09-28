@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import { connect } from 'dva';
 import { Table, Tag, Button, Alert, Input, Row, Col, Select } from 'antd'
 import PageHeaderWrapper from '@/components/PageHeaderWrapper';
-import { Languages } from '@/services/languages'
+import { Languages } from '@/services/enums';
 
 import styles from './EditPanel.less';
 

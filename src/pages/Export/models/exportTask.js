@@ -1,4 +1,4 @@
-import { listSettings } from '@/services/api/export'
+import { listTasks, createTask } from '@/services/api/export'
 
 export default {
     namespace: 'exportTask',
@@ -9,20 +9,30 @@ export default {
 
     effects: {
         *fetch(_, { select, call, put }) {
-            // const currentProject = yield select(state => state.project.currentProject);
+            const currentProject = yield select(state => state.project.currentProject);
+            const response = yield call(listTasks, currentProject.id);
+            if (response.code === 0) {
+                const { tasks } = response.data;
+                tasks.forEach(task => {
+                    if (task.export_range) {
+                        task.export_range = JSON.parse(task.export_range);
+                        task.languages = task.languages.split(',');
+                    }
+                });
 
-            // const response = yield call(listSettings, currentProject.id);
-            // if (response.code === 0) {
-            //     const { settings } = response.data;
+                yield put({
+                    type: 'saveTasks',
+                    payload: tasks,
+                });
+            }
+        },
 
-                
-            // }
-
-            yield put({
-                type: 'saveTasks',
-                payload: settings,
-            });
-        }
+        *create({ payload }, { call, put }) {
+            const response = yield call(createTask, { ...payload });
+            if (response.code === 0) {
+                yield put({ type: 'fetch' });
+            }
+        },
     },
 
     reducers: {
