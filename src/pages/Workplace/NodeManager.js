@@ -1,7 +1,6 @@
 import React, { PureComponent, Fragment } from 'react';
 import { connect } from 'dva';
 import router from 'umi/router';
-import moment from 'moment';
 import {
     Row,
     Col,
@@ -17,14 +16,12 @@ import {
     DatePicker,
     Modal,
     message,
-    Tag,
-    Divider,
     Steps,
     Radio,
     Breadcrumb,
     Alert
 } from 'antd';
-import StandardTable from '@/components/StandardTable';
+import PathNodeTable from '@/components/PathNodeTable';
 import PageHeaderWrapper from '@/components/PageHeaderWrapper';
 
 import styles from './NodeManager.less';
@@ -167,46 +164,10 @@ class NodeManager extends PureComponent {
         modalVisible: false,
         updateModalVisible: false,
         expandForm: false,
-        selectedRows: [],
         formValues: {},
         stepFormValues: {},
+        isItemsSelected: false
     };
-
-    columns = [
-        {
-            title: '节点名称',
-            key: 'name',
-            render: node => {
-                return node.type === 'path'
-                    ? <a onClick={this.openDir.bind(this, node)}><Icon type="folder" theme="outlined" /> {node.name}</a>
-                    : <span><Icon type="file-text" theme="outlined" />
-                        {node.name}
-                        {/* {node.export_alias ? <Tag style={{ marginLeft: 10 }}>导出别名：{node.export_alias}</Tag> : null} */}
-                    </span>
-            }
-        },
-        {
-            title: '描述',
-            key: 'description',
-            dataIndex: 'description',
-        },
-        {
-            title: '创建时间',
-            key: 'time',
-            render: node => <span>{moment(node.create_time).format('YYYY-MM-DD HH:mm:ss')}</span>,
-        },
-        {
-            title: '操作',
-            key: 'operation',
-            render: node => (
-                <Fragment>
-                    <a onClick={() => this.handleUpdateModalVisible(true, node)}>修改</a>
-                    <Divider type="vertical" />
-                    <a onClick={() => this.goEdit(node)}>编辑文案</a>
-                </Fragment>
-            ),
-        },
-    ];
 
     componentDidMount() {
         this.loadProject();
@@ -229,7 +190,7 @@ class NodeManager extends PureComponent {
             payload: { node, condition: formValues, ...paginationArg }
         });
 
-        this.setState({ selectedRows: [] });
+        this.refs.pathNodeTable.clearSelectRows();
     }
 
     goEdit = (node, recursion) => {
@@ -271,7 +232,7 @@ class NodeManager extends PureComponent {
     };
 
     handleMenuClick = e => {
-        const { selectedRows } = this.state;
+        const selectedRows = this.refs.pathNodeTable.getSelectRows();
 
         if (!selectedRows) return;
         switch (e.key) {
@@ -297,9 +258,7 @@ class NodeManager extends PureComponent {
                     type: 'node_manager/delete',
                     payload: selectedRows.map(row => row.id)
                 }).then(() => {
-                    self.setState({
-                        selectedRows: [],
-                    });
+                    self.refs.pathNodeTable.clearSelectRows();
                 });
             },
         });
@@ -326,11 +285,7 @@ class NodeManager extends PureComponent {
         }
     }
 
-    handleSelectRows = rows => {
-        this.setState({
-            selectedRows: rows,
-        });
-    };
+
 
     handleSearch = e => {
         e.preventDefault();
@@ -392,6 +347,10 @@ class NodeManager extends PureComponent {
             }
         });
     };
+
+    handleSelectRows = rows => {
+        this.setState({ isItemsSelected: rows && rows.length })
+    }
 
     renderSimpleForm() {
         const {
@@ -549,7 +508,7 @@ class NodeManager extends PureComponent {
             node_manager: { currentNode, nodes, loading }
         } = this.props;
 
-        const { selectedRows, modalVisible, updateModalVisible, stepFormValues } = this.state;
+        const { modalVisible, updateModalVisible, stepFormValues, isItemsSelected } = this.state;
         const menu = (
             <Menu onClick={this.handleMenuClick} selectedKeys={[]}>
                 <Menu.Item key="remove">删除</Menu.Item>
@@ -573,8 +532,6 @@ class NodeManager extends PureComponent {
             handleUpdate: this.handleUpdate,
         };
 
-        const isItemsSelected = selectedRows.length > 0;
-
         return (
             <PageHeaderWrapper>
                 <Card bordered={false}>
@@ -590,24 +547,22 @@ class NodeManager extends PureComponent {
                                     编辑文案 <Icon type="down" />
                                 </Button>
                             </Dropdown>
-                            {selectedRows.length > 0 && (
+                            {isItemsSelected ? (
                                 <Dropdown overlay={menu}>
                                     <Button>
                                         更多操作 <Icon type="down" />
                                     </Button>
                                 </Dropdown>
-                            )}
+                            ) : null}
                         </div>
 
-                        <StandardTable
-                            rowKey="id"
-                            selectedRows={selectedRows}
+                        <PathNodeTable ref="pathNodeTable"
                             loading={loading}
                             data={nodes}
-                            columns={this.columns}
-                            onSelectRow={this.handleSelectRows}
-                            onChange={this.handleStandardTableChange}
-                        />
+                            onDirClick={this.openDir}
+                            onUpdateClick={this.handleUpdateModalVisible}
+                            onSelectRows={this.handleSelectRows}
+                            onChange={this.handleStandardTableChange} />
                     </div>
                 </Card>
                 <CreateForm {...parentMethods} modalVisible={modalVisible} />

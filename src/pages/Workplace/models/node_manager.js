@@ -63,16 +63,11 @@ export default {
             }
         },
 
-        *update({ payload }, { call, put }) {
+        *update({ payload }, { select, call, put }) {
+            const currentNode = yield select(state => state.node_manager.currentNode);
             const response = yield call(updateNode, payload);
             if (response.code === 0) {
-                const node = response.data.node;
-
-                yield put({
-                    type: 'updateNode',
-                    payload: node,
-                });
-
+                yield put({ type: 'fetch', payload: { node: currentNode } });
                 return { success: true };
             }
             else {
@@ -115,20 +110,6 @@ export default {
                 pathStack,
                 loading: false,
             };
-        },
-
-        updateNode(state, action) {
-            const newNode = action.payload;
-            const { list } = state.nodes;
-            for (let i = 0; i < list.length; i++) {
-                if (list[i].id === newNode.id) {
-                    Object.keys(newNode).forEach(key => {
-                        list[i][key] = newNode[key];
-                    });
-                    break;
-                }
-            }
-            return { ...state };
         },
     },
 }

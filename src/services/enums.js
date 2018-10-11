@@ -19,3 +19,10 @@ export const ExportTaskStates = {
     success: { text: '成功', color: 'green' },
     fail: { text: '失败', color: 'red' },
 };
+
+export const TagColors = {
+    red: { color: '#f50' },
+    cyan: { color: '#2db7f5' },
+    green: { color: '#87d068' },
+    blue: { color: '#108ee9' },
+}

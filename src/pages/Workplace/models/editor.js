@@ -20,6 +20,8 @@ export default {
         *fetch({ payload }, { select, call, put }) {
             yield put({ type: 'setLoading' });
 
+            console.log(payload);
+
             const { type, node, recursion } = payload;
             const conditionParam = {
                 id: type === 'entry' ? node : null,
@@ -42,12 +44,11 @@ export default {
                 }
             }
 
-            console.log('b ', Date.parse(new Date()));
             // 获取词条
             const response = yield call(queryPathNode, conditionParam, 1, 10000);
-            console.log('b1 ', Date.parse(new Date()));
             if (response.code === 0) {
                 const { list } = response.data;
+                
                 yield put({
                     type: 'setNodes',
                     payload: list,

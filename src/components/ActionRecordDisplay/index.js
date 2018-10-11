@@ -5,6 +5,10 @@ import { Languages } from '@/services/enums';
 import styles from './index.less';
 
 const renderActionRecord = (record) => {
+    if (!record.target){
+        return '未知';
+    }
+
     switch (record.action) {
         case 'CREATE_PROJECT':
             return <span>创建了项目 <a>{record.target.name}</a></span>;
@@ -27,6 +31,9 @@ const renderActionRecord = (record) => {
                 </Tooltip>
             </span>;
         case 'UPDATE_LANG_ENTRY':
+            if (!record.target.node){
+                return '更新了词条';
+            }
             return <span>
                 更新了词条
                 &nbsp;

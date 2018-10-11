@@ -43,7 +43,7 @@ export default [
             path: '/workplace/query',
             name: 'query',
             icon: 'dashboard',
-            component: './Workplace/Query',
+            component: './Workplace/NodeQuery',
           },
           {
             path: '/workplace/edit',
@@ -81,7 +81,7 @@ export default [
         path: '/tag',
         name: 'tag',
         icon: 'check-circle-o',
-        component: './Result/Success',
+        component: './Project/ProjectTag',
       },
       {
         path: '/member',

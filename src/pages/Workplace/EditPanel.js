@@ -26,7 +26,11 @@ class EditPanel extends Component {
         const languageKeys = Object.keys(Languages).filter(s => !!temp[s])
         this.setState({ languageKeys }, () => {
             const { type, node, recursion } = this.props.location.query;
-            this.loadNodes({ type, node, recursion });
+            this.loadNodes({
+                type,
+                node: node ? parseInt(node) : null,
+                recursion
+            });
         });
     }
 

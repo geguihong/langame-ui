@@ -14,6 +14,13 @@ export async function getNodeEntries(nodes, language) {
     });
 }
 
+export async function getByNode(node) {
+    const params = {
+        node: node.id
+    };
+    return request(ApiBase + `/api/entry/getByNode?${stringify(params)}`);
+}
+
 export async function updateNodeEntries(entries) {
     const params = {
         entries: entries.map(o => {
