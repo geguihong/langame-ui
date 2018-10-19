@@ -1,1 +1,1 @@
-export const ApiBase = 'http://localhost:6080';
+export const ApiBase = 'http://language.insta360.cn/server-proxy';
