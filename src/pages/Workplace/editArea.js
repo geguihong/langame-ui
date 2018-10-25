@@ -24,21 +24,28 @@ class EditArea extends Component {
     isArrayNode: false
   };
 
-  componentDidMount() {
+  componentWillMount() {
+    this.setIsArray(this.props);
+  }
+  componentWillReceiveProps(props) {
+    this.setIsArray(props);
+  }
+
+  setIsArray(props){
     let { isArray,isArrayNode } = this.state;
-    const { entry } = this.props;
+    const { entry } = props;
     isArray = entry && entry.originContent ? isArrayStr(entry.originContent):false;
     isArrayNode = isArray;
     this.setState({ isArray,isArrayNode });
   }
 
-  getJsonNode = (value, id, val, isreference) => {
+  getArrayNode = (value, id, val, isreference) => {
     const { handleEntryChange } = this.props;
     let data = JSON.parse(value);
     if (data.length > 0) {
       let keys = [];
       let columns = [];
-      const dataSource = data;
+      const dataSource = JSON.parse(JSON.stringify(data));
       const filterDropdownStyle = {
         padding: '8px',
         borderRadius: '6px',
@@ -65,6 +72,14 @@ class EditArea extends Component {
         data[index + 1] = cope;
         handleEntryChange(id, val, JSON.stringify(data));
       };
+      const addLine = () => {
+        let newLine = {};
+        keys.forEach(k => {
+          newLine[k] = '';
+        })
+        data.push(newLine);
+        handleEntryChange(id, val, JSON.stringify(data));
+      }
       const lineDel = index => {
         data.splice(index, 1);
         handleEntryChange(id, val, JSON.stringify(data));
@@ -119,7 +134,6 @@ class EditArea extends Component {
         ({
           title: key,
           dataIndex: key,
-          key,
           render: (text, record, index) => 
             (
               <Input.TextArea
@@ -185,10 +199,12 @@ class EditArea extends Component {
           dataIndex: 'action',
           key: 'action',
           width: 160,
+          fixed: 'right',
           render: (text, record, index) => {
             return (
               <div>
                 <Button
+                  disabled={index === 0}
                   onClick={() => {
                     lineUp(index);
                   }}
@@ -196,6 +212,7 @@ class EditArea extends Component {
                   <Icon type="arrow-up" theme="outlined" />
                 </Button>
                 <Button
+                  disabled={index === dataSource.length - 1}
                   onClick={() => {
                     lineDown(index);
                   }}
@@ -215,19 +232,25 @@ class EditArea extends Component {
         });
       }
       return (
-        <div>
-          <div>
+        <Col className={styles.editArray}>
+          <div className={styles.action}>
             <Button
               size="small"
               onClick={addKey}
               disabled={isreference}
-              style={{ marginBottom: '8px' }}
             >
               添加一列
             </Button>
+            <Button
+              size="small"
+              onClick={addLine}
+              disabled={isreference}
+            >
+              添加一行
+            </Button>
           </div>
-          <Table columns={columns} dataSource={dataSource} pagination={false} size="small" />
-        </div>
+          <Table columns={columns} dataSource={dataSource} pagination={false} scroll={{x: 1000}} size="small" />
+        </Col>
       );
     }
     return null;
@@ -244,54 +267,38 @@ class EditArea extends Component {
     const originContent = entry ? entry.originContent : null;
     const changed = content !== originContent;
     const value = isreference ? originContent : content;
-    if (isArray) {
-      return (
-        <Col span={col}>
-          {this.getJsonNode(value, node.id, language, isreference)}
-          <div className={styles.editItemActions}>
-            <a
-              onClick={() => {
-                isArray = false;
-                this.setState({ isArray });
-              }}
-            >
-              取消格式化
-            </a>
-            {!isreference && changed ? (
-              <a
-                onClick={() => handleEntryChange(node.id, language, originContent)}
-                style={{ marginLeft: '10px' }}
-              >
-                取消编辑
-              </a>
-            ) : null}
-          </div>
-        </Col>
-      );
-    }
     return (
       <Col span={col}>
-        <Input.TextArea
-          rows={3}
-          disabled={isreference}
-          value={value}
-          onChange={e => handleEntryChange(node.id, language, e.target.value)}
-        />
+      { 
+        isArray ? (
+          this.getArrayNode(value, node.id, language, isreference)
+        ):(<Input.TextArea
+              rows={3}
+              disabled={isreference}
+              value={value}
+              onChange={e => handleEntryChange(node.id, language, e.target.value)}
+            />
+        )
+      }
         <div className={styles.editItemActions}>
           {isArrayNode ? (
-            <a
+            <Button
               onClick={() => {
-                isArray = true;
+                isArray = !isArray;
                 this.setState({ isArray });
               }}
+              size="small"
             >
-              格式化JSON
-            </a>
+              {isArray?'取消格式化':'格式化列表'}
+            </Button>
           ) : null}
           {!isreference && changed ? (
-            <a onClick={() => handleEntryChange(node.id, language, originContent)}>
+            <Button
+              onClick={() => handleEntryChange(node.id, language, originContent)}
+              size="small"
+            >
               取消编辑
-            </a>
+          </Button>
           ) : null}
         </div>
       </Col>

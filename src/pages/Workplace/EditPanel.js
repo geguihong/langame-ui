@@ -16,6 +16,7 @@ class EditPanel extends Component {
     languageKeys: [],
     referenceLanuage: '',
     editLanuage: '',
+    expandedRow: []
   };
 
   componentDidMount() {
@@ -127,13 +128,10 @@ class EditPanel extends Component {
       const nodeLanguages = entryStore[`${node.id}`];
       return (
         <Row gutter={{ xs: 8, sm: 16, md: 24, lg: 32 }}>
-          {languages.map((v, k, i) => {
+          {languages.map((v, k) => {
             const isreference = languages.length > 1 && k === 0;
             const entry = nodeLanguages ? nodeLanguages[v] : null;
-            if(entry !== null){
-              return <EditArea key={i} entry={entry} isreference={isreference} node={node} language={v} col={24 / languages.length} handleEntryChange={this.handleEntryChange} />
-            }
-            return null
+            return <EditArea key={`editArea-${v}-${k}`} entry={entry} isreference={isreference} node={node} language={v} col={24 / languages.length} handleEntryChange={this.handleEntryChange} />
           })}
         </Row>
       );
@@ -157,7 +155,7 @@ class EditPanel extends Component {
 
   render() {
     const { editor:{loading, nodes, overview, changedEntries} } = this.props;
-    const { referenceLanuage, editLanuage, languageKeys } = this.state;
+    const { referenceLanuage, editLanuage, languageKeys, expandedRow } = this.state;
     const languages = this.getLanguages();
     const columns = this.getColumns(languages);
     const expandedRowRender = this.getExpandedRowRender(languages);
@@ -220,8 +218,13 @@ class EditPanel extends Component {
           columns={columns}
           loading={loading}
           expandedRowRender={expandedRowRender}
-          expandRowByClick={true}
+          defaultExpandAllRows={true}
+          expandedRowKeys={expandedRow}
           expandedRowKeys={nodes.map(v => `${v.id}`)}
+          expandRowByClick={true}
+          onExpand={(e,r)=>{
+            console.log(e,r)
+          }}
           dataSource={nodes}
           pagination={{
             position: 'both',
