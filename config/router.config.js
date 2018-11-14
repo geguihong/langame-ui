@@ -68,14 +68,14 @@ export default [
             name: 'task',
             path: '/export/task',
             component: './Export/Task',
-          }
-        ]
+          },
+        ],
       },
       {
         path: '/deploy',
         name: 'deploy',
         icon: 'profile',
-        component: './Profile/BasicProfile',
+        component: './Temp/Temp',
       },
       {
         path: '/tag',
@@ -93,7 +93,7 @@ export default [
         path: '/settings',
         name: 'settings',
         icon: 'dashboard',
-        component: './Dashboard/Workplace',
+        component: './Temp/Temp',
       },
       {
         component: '404',
