@@ -20,7 +20,7 @@ export default {
                 const node = response.data.node;
                 yield put({
                     type: 'fetch',
-                    payload: payload.action?payload.action:{ node }
+                    payload: { node }
                 });
             }
         },
@@ -28,14 +28,13 @@ export default {
         *fetch({ payload }, { select, call, put }) {
             yield put({ type: 'setLoading' });
 
-            let { node, condition, currentPage, pageSize } = payload ? payload : {};
+            let { node, type, match_value, current_page, page_size } = payload ? payload : {};
             if (!node) {
                 node = yield select(state => state.node_manager.currentNode);
             }
-            condition = condition ? condition : {};
-            const conditionParam = { ...condition, parent: node.id };
+            const conditionParam = { type, match_value, parent: node.id };
 
-            const response = yield call(queryPathNode, conditionParam, currentPage, pageSize);
+            const response = yield call(queryPathNode, conditionParam, current_page, page_size);
             if (response.code === 0) {
                 const { list, total_size, page_number, page_size } = response.data;
                 yield put({

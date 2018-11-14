@@ -154,6 +154,28 @@ class UpdateForm extends PureComponent {
     }
 }
 
+function extractAction(search) {
+    const obj = qs.parse(search, { ignoreQueryPrefix: true });
+    if (!(obj.node_id || obj.node_name || obj.current_page || obj.page_size || obj.match_value || obj.type)) {
+        return null;
+    }
+
+    const action = {};
+    if (obj.node_id) {
+        action.node = {
+            id: obj.node_id,
+            name: obj.node_name || 'temp'
+        };
+    }
+
+    if (obj.current_page) { action.current_page = obj.current_page; }
+    if (obj.page_size) { action.page_size = obj.page_size; }
+    if (obj.match_value) { action.match_value = obj.match_value; }
+    if (obj.type) { action.match_value = obj.type; }
+
+    return action;
+}
+
 /* eslint react/no-multi-comp:0 */
 @connect(({ node_manager, project }) => ({
     currentProject: project.currentProject,
@@ -176,9 +198,9 @@ class NodeManager extends PureComponent {
 
     componentDidUpdate(prevProps) {
         if (prevProps.location.search !== this.props.location.search) {
-            const nextAction = qs.parse(this.props.location.search, { ignoreQueryPrefix: true }).action;
+            const nextAction = extractAction(this.props.location.search);
             if (nextAction) {
-                this.applyAction(JSON.parse(nextAction));
+                this.applyAction(nextAction);
             } else {
                 this.applyAction({});
             }
@@ -199,28 +221,28 @@ class NodeManager extends PureComponent {
     loadProject = () => {
         const { dispatch, currentProject, location } = this.props;
 
-        const nextAction = qs.parse(this.props.location.search, { ignoreQueryPrefix: true }).action;
-
-        if (nextAction) {
             dispatch({
                 type: 'node_manager/loadRoot',
-                payload: Object.assign({}, currentProject, { action: JSON.parse(nextAction) })
-            });
-        } else {
-            dispatch({
-                type: 'node_manager/loadRoot',
-                payload: currentProject
-            });
-        }
+                payload: currentProject,
+            }).then(() => {
+                const nextAction = extractAction(location.search);
+                if (nextAction) {
+                    this.applyAction(nextAction);
+                }
+            })
     }
 
     openDir = (node, pagination) => {
         const { formValues } = this.state;
         const paginationArg = pagination ? pagination : {};
-        const action = { node, condition: formValues, currentPage: paginationArg.currentPage, pageSize: paginationArg.pageSize };
+        const action = { match_value: formValues.match_value, type: formValues.type, current_page: paginationArg.current, page_size: paginationArg.pageSize };
+        if (node) {
+            action.node_id = node.id;
+            action.node_name = node.name;
+        }
 
         const { location } = this.props;
-        const nextSearch = qs.stringify(Object.assign({}, qs.parse(location.search, { ignoreQueryPrefix: true }), { action: JSON.stringify(action) }));
+        const nextSearch = qs.stringify(Object.assign({}, qs.parse(location.search, { ignoreQueryPrefix: true }), { ...action }));
         router.push(location.pathname + '?' + nextSearch);
     }
 
@@ -237,10 +259,7 @@ class NodeManager extends PureComponent {
 
     handleStandardTableChange = (pagination) => {
         const { currentNode } = this.props.node_manager
-        this.openDir(currentNode, {
-            currentPage: pagination.current,
-            pageSize: pagination.pageSize,
-        });
+        this.openDir(currentNode, pagination);
     };
 
     handleFormReset = () => {
@@ -413,10 +432,10 @@ class NodeManager extends PureComponent {
                         <span className={styles.submitButtons}>
                             <Button type="primary" htmlType="submit">
                                 查询
-              </Button>
+                            </Button>
                             <Button style={{ marginLeft: 8 }} onClick={this.handleFormReset}>
                                 重置
-              </Button>
+                            </Button>
                             {/* <a style={{ marginLeft: 8 }} onClick={this.toggleForm}>
                                 展开 <Icon type="down" />
                             </a> */}

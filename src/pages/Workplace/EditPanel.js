@@ -9,6 +9,18 @@ import { Languages } from '@/services/enums';
 
 import styles from './EditPanel.less';
 
+function extractAction(search) {
+  const obj = qs.parse(search, { ignoreQueryPrefix: true });
+  if (!(obj.reference_language || obj.edit_language)) {
+      return null;
+  }
+
+  const action = {};
+  if (obj.reference_language) { action.reference_language = obj.reference_language; }
+  if (obj.edit_language) { action.edit_language = obj.edit_language; }
+  return action;
+}
+
 @connect(({ editor, project }) => ({
   editor,
   currentProject: project.currentProject,
@@ -16,8 +28,8 @@ import styles from './EditPanel.less';
 class EditPanel extends Component {
   state = {
     languageKeys: [],
-    referenceLanuage: '',
-    editLanuage: '',
+    referencelanguage: '',
+    editlanguage: '',
     expandedRow: [],
     preference: {}
   };
@@ -65,45 +77,51 @@ class EditPanel extends Component {
   }
 
   componentDidUpdate(prevProps) {
+    const { languageKeys } = this.state;
     if (prevProps.location.search !== this.props.location.search) {
-        const nextAction = qs.parse(this.props.location.search, { ignoreQueryPrefix: true }).action;
-        if (nextAction) {
-            this.applyAction(JSON.parse(nextAction));
-        }
+      const nextAction = extractAction(this.props.location.search);
+      if (nextAction) {
+        this.applyAction(nextAction);
+      } else {
+        this.applyAction({ edit_Language: languageKeys[0], reference_language: undefined })
+      }
     }
   }
 
   applyAction(action) {
     const { languageKeys } = this.state;
-    this.setState({ referenceLanuage: action.referenceLanuage || undefined });
-    this.setState({ editLanuage: action.editLanuage || languageKeys[0]});
+    this.setState({ referencelanguage: action.reference_language || undefined });
+    this.setState({ editlanguage: action.edit_language || languageKeys[0]});
 
     const { dispatch } = this.props;
-    if (action.referenceLanuage) {
+    if (action.reference_language) {
       dispatch({
         type: 'editor/loadEntry',
-        payload: action.referenceLanuage,
+        payload: action.reference_language,
       });
     }
-    if (action.editLanuage) {
+    if (action.edit_language) {
       dispatch({
         type: 'editor/loadEntry',
-        payload: action.editLanuage,
+        payload: action.edit_language,
       });
     }
   }
 
   switchLanguage = (key, language) => {
-    const { referenceLanuage, editLanuage } = this.state;
-    const action = { referenceLanuage, editLanuage };
+    const { referencelanguage, editlanguage } = this.state;
+    const action = { 
+      reference_language: referencelanguage, 
+      edit_language: editlanguage 
+    };
     if (key === 'reference') {
-      action.referenceLanuage = language;
+      action.reference_language = language;
     } else {
-      action.editLanuage = language;
+      action.edit_language = language;
     }
 
     const { location } = this.props;
-    const nextSearch = qs.stringify(Object.assign({}, qs.parse(location.search, { ignoreQueryPrefix: true }), { action: JSON.stringify(action) }));
+    const nextSearch = qs.stringify(Object.assign({}, qs.parse(location.search, { ignoreQueryPrefix: true }), { ...action }));
     router.push(location.pathname + '?' + nextSearch);
   };
 
@@ -114,23 +132,23 @@ class EditPanel extends Component {
       type: 'editor/fetch',
       payload: params,
     }).then(() => {
-        const nextAction = qs.parse(this.props.location.search, { ignoreQueryPrefix: true }).action;
+        const nextAction = extractAction(this.props.location.search);
         if (nextAction) {
-          this.applyAction(JSON.parse(nextAction));
+          this.applyAction(nextAction);
         } else {
-          this.applyAction({ editLanuage: languageKeys[0] })
+          this.applyAction({ edit_language: languageKeys[0], reference_language: undefined  });
         }
       });
   };
 
   getLanguages = () => {
-    const { referenceLanuage, editLanuage } = this.state;
+    const { referencelanguage, editlanguage } = this.state;
     const languages = [];
-    if (referenceLanuage) {
-      languages.push(referenceLanuage);
+    if (referencelanguage) {
+      languages.push(referencelanguage);
     }
-    if (editLanuage) {
-      languages.push(editLanuage);
+    if (editlanguage) {
+      languages.push(editlanguage);
     }
     return languages;
   };
@@ -215,7 +233,7 @@ class EditPanel extends Component {
 
   render() {
     const { editor:{loading, nodes, overview, changedEntries} } = this.props;
-    const { referenceLanuage, editLanuage, languageKeys, expandedRow, preference } = this.state;
+    const { referencelanguage, editlanguage, languageKeys, expandedRow, preference } = this.state;
     const languages = this.getLanguages();
     const columns = this.getColumns(languages);
     const expandedRowRender = this.getExpandedRowRender(languages);
@@ -226,7 +244,7 @@ class EditPanel extends Component {
         <Col span={4}>
           <span>参考语言：</span>
           <Select
-            value={referenceLanuage}
+            value={referencelanguage}
             style={{ width: 120 }}
             onChange={value => this.switchLanguage('reference', value)}
           >
@@ -243,7 +261,7 @@ class EditPanel extends Component {
         <Col span={4}>
           <span>编辑语言：</span>
           <Select
-            value={editLanuage}
+            value={editlanguage}
             style={{ width: 120 }}
             disabled={entriesChanged}
             onChange={value => this.switchLanguage('edit', value)}
