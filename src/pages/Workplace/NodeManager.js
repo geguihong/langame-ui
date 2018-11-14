@@ -1,6 +1,7 @@
 import React, { PureComponent, Fragment } from 'react';
 import { connect } from 'dva';
 import router from 'umi/router';
+import qs from 'qs';
 import {
     Row,
     Col,
@@ -173,24 +174,54 @@ class NodeManager extends PureComponent {
         this.loadProject();
     }
 
-    loadProject = () => {
-        const { dispatch, currentProject } = this.props;
+    componentDidUpdate(prevProps) {
+        if (prevProps.location.search !== this.props.location.search) {
+            const nextAction = qs.parse(this.props.location.search, { ignoreQueryPrefix: true }).action;
+            if (nextAction) {
+                this.applyAction(JSON.parse(nextAction));
+            } else {
+                this.applyAction({});
+            }
+        }
+    }
+
+    applyAction = (action) => {
+        const { dispatch } = this.props;
+
         dispatch({
-            type: 'node_manager/loadRoot',
-            payload: currentProject
+            type: 'node_manager/fetch',
+            payload: action
         });
+
+        this.refs.pathNodeTable.clearSelectRows();
+    }
+
+    loadProject = () => {
+        const { dispatch, currentProject, location } = this.props;
+
+        const nextAction = qs.parse(this.props.location.search, { ignoreQueryPrefix: true }).action;
+
+        if (nextAction) {
+            dispatch({
+                type: 'node_manager/loadRoot',
+                payload: Object.assign({}, currentProject, { action: JSON.parse(nextAction) })
+            });
+        } else {
+            dispatch({
+                type: 'node_manager/loadRoot',
+                payload: currentProject
+            });
+        }
     }
 
     openDir = (node, pagination) => {
         const { formValues } = this.state;
-        const { dispatch } = this.props;
         const paginationArg = pagination ? pagination : {};
-        dispatch({
-            type: 'node_manager/fetch',
-            payload: { node, condition: formValues, ...paginationArg }
-        });
+        const action = { node, condition: formValues, currentPage: paginationArg.currentPage, pageSize: paginationArg.pageSize };
 
-        this.refs.pathNodeTable.clearSelectRows();
+        const { location } = this.props;
+        const nextSearch = qs.stringify(Object.assign({}, qs.parse(location.search, { ignoreQueryPrefix: true }), { action: JSON.stringify(action) }));
+        router.push(location.pathname + '?' + nextSearch);
     }
 
     goEdit = (node, recursion) => {
@@ -205,8 +236,7 @@ class NodeManager extends PureComponent {
     }
 
     handleStandardTableChange = (pagination) => {
-        const { currentNode } = this.props;
-        this.openDir(currentNode, {
+        this.openDir(undefined, {
             currentPage: pagination.current,
             pageSize: pagination.pageSize,
         });

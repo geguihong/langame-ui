@@ -20,7 +20,7 @@ export default {
                 const node = response.data.node;
                 yield put({
                     type: 'fetch',
-                    payload: { node }
+                    payload: payload.action?payload.action:{ node }
                 });
             }
         },
