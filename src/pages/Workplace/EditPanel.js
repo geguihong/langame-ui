@@ -1,5 +1,7 @@
 import React, { Component } from 'react';
 import { connect } from 'dva';
+import qs from 'qs';
+import router from 'umi/router';
 import { Table, Tag, Button, Alert, Row, Col, Select } from 'antd';
 import PageHeaderWrapper from '@/components/PageHeaderWrapper';
 import EditArea from './editArea';
@@ -16,10 +18,34 @@ class EditPanel extends Component {
     languageKeys: [],
     referenceLanuage: '',
     editLanuage: '',
-    expandedRow: []
+    expandedRow: [],
+    preference: {}
   };
 
+  constructor(props) {
+    super(props);
+  }
+
+  restorePreference() {
+    try {
+      if (localStorage['preference']) {
+        const preference = JSON.parse(localStorage['preference'])
+        this.setState({ preference })
+      }
+    } catch (e) {}
+  }
+
+  onShowSizeChange = (_, size) => {
+    const { preference } = this.state;
+    preference.defaultPageSize = size;
+    this.setState({ preference });
+
+    localStorage['preference'] = JSON.stringify(preference);
+  }
+
   componentDidMount() {
+    this.restorePreference();
+
     const { currentProject } = this.props;
     const temp = currentProject.languages.split(',').reduce((map, s) => {
       const m = map;
@@ -38,18 +64,47 @@ class EditPanel extends Component {
     });
   }
 
-  switchLanguage = (key, language) => {
-    if (key === 'reference') {
-      this.setState({ referenceLanuage: language });
-    } else {
-      this.setState({ editLanuage: language });
+  componentDidUpdate(prevProps) {
+    if (prevProps.location.search !== this.props.location.search) {
+        const nextAction = qs.parse(this.props.location.search, { ignoreQueryPrefix: true }).action;
+        if (nextAction) {
+            this.applyAction(JSON.parse(nextAction));
+        }
     }
+  }
+
+  applyAction(action) {
+    const { languageKeys } = this.state;
+    this.setState({ referenceLanuage: action.referenceLanuage || undefined });
+    this.setState({ editLanuage: action.editLanuage || languageKeys[0]});
 
     const { dispatch } = this.props;
-    dispatch({
-      type: 'editor/loadEntry',
-      payload: language,
-    });
+    if (action.referenceLanuage) {
+      dispatch({
+        type: 'editor/loadEntry',
+        payload: action.referenceLanuage,
+      });
+    }
+    if (action.editLanuage) {
+      dispatch({
+        type: 'editor/loadEntry',
+        payload: action.editLanuage,
+      });
+    }
+  }
+
+  switchLanguage = (key, language) => {
+    const { referenceLanuage, editLanuage } = this.state;
+    const action = { referenceLanuage, editLanuage };
+    if (key === 'reference') {
+      action.referenceLanuage = language;
+    } else {
+      action.editLanuage = language;
+    }
+
+    const { location } = this.props;
+    const nextSearch = qs.stringify(Object.assign({}, qs.parse(location.search, { ignoreQueryPrefix: true }), { action: JSON.stringify(action) }));
+    router.push(location.pathname + '?' + nextSearch);
   };
 
   loadNodes = params => {
@@ -59,8 +114,13 @@ class EditPanel extends Component {
       type: 'editor/fetch',
       payload: params,
     }).then(() => {
-      this.switchLanguage('edit', languageKeys[0]);
-    });
+        const nextAction = qs.parse(this.props.location.search, { ignoreQueryPrefix: true }).action;
+        if (nextAction) {
+          this.applyAction(JSON.parse(nextAction));
+        } else {
+          this.applyAction({ editLanuage: languageKeys[0] })
+        }
+      });
   };
 
   getLanguages = () => {
@@ -155,7 +215,7 @@ class EditPanel extends Component {
 
   render() {
     const { editor:{loading, nodes, overview, changedEntries} } = this.props;
-    const { referenceLanuage, editLanuage, languageKeys, expandedRow } = this.state;
+    const { referenceLanuage, editLanuage, languageKeys, expandedRow, preference } = this.state;
     const languages = this.getLanguages();
     const columns = this.getColumns(languages);
     const expandedRowRender = this.getExpandedRowRender(languages);
@@ -229,7 +289,8 @@ class EditPanel extends Component {
           pagination={{
             position: 'both',
             showSizeChanger: true,
-            defaultPageSize: 30,
+            pageSize: preference.defaultPageSize || 30,
+            onShowSizeChange: this.onShowSizeChange,
             pageSizeOptions: ['30', '50', '100'],
             showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} items`,
           }}

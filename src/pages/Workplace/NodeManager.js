@@ -236,7 +236,8 @@ class NodeManager extends PureComponent {
     }
 
     handleStandardTableChange = (pagination) => {
-        this.openDir(undefined, {
+        const { currentNode } = this.props.node_manager
+        this.openDir(currentNode, {
             currentPage: pagination.current,
             pageSize: pagination.pageSize,
         });
