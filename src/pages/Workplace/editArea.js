@@ -8,6 +8,9 @@ const isArrayStr = str => {
     try {
       const obj = JSON.parse(str);
       if (typeof obj === 'object' && obj && Array.isArray(obj)) {
+        if (obj[0] && typeof obj[0] === 'string') {
+          return false;
+        }
         return true;
       }
       return false;
